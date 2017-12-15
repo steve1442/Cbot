@@ -100,15 +100,41 @@ void lcdmenu(){
 }
 void drive(int left, int right) // drive func
 {
-	motor[FrontLeft] = left * inver[FrontLeft];
-	motor[BackMidLeft] = left * inver[BackMidLeft];
 	motor[BackLeft] = left * inver[BackLeft];
+	motor[BackMidLeft] = left * inver[BackMidLeft];
 	motor[FrontMidLeft] = left * inver[FrontMidLeft];
+	motor[FrontLeft] = left * inver[FrontLeft];
 
-	motor[FrontRight] = right * inver[FrontRight];
+
 	motor[BackMidRight] = right * inver[BackMidRight];
 	motor[BackRight] = right * inver[BackRight];
+	motor[FrontRight] = right * inver[FrontRight];
 	motor[FrontMidRight] = right * inver[FrontMidRight];
+}
+void goaway(int front, int back)
+{
+	motor[BackLeft] = back * inver[BackLeft];
+	motor[BackMidLeft] = back * inver[BackMidLeft];
+	motor[BackRight] = back * inver[BackRight];
+	motor[BackMidRight] = back * inver[BackMidRight];
+
+	motor[FrontLeft] = front * inver[FrontLeft];
+	motor[FrontMidLeft] = front * inver[FrontMidLeft];
+	motor[FrontRight] = front * inver[FrontRight];
+	motor[FrontMidRight] = front * inver[FrontMidRight];
+}
+
+void strafe(int dir)
+{
+	motor[BackLeft] = dir * inver[BackLeft];
+	motor[BackMidLeft] = dir * inver[BackMidLeft];
+	motor[FrontMidLeft] = -dir * inver[FrontMidLeft];
+	motor[FrontLeft] = -dir * inver[FrontLeft];
+
+	motor[BackMidRight] = -dir * inver[BackMidRight];
+	motor[BackRight] = -dir * inver[BackRight];
+	motor[FrontRight] = dir * inver[FrontRight];
+	motor[FrontMidRight] = dir * inver[FrontMidRight];
 }
 
 void lockingthing(int pwm){motor[lockl] = pwm; motor[Lockr] = pwm;} // simple arm func
@@ -117,13 +143,13 @@ void halt(bool broke)
 {
 	if(broke)
 	{
-		digitalWrite(4, HIGH);
-		digitalWrite(5, HIGH);
+		digitalWrite(1, HIGH);
+		digitalWrite(2, HIGH);
 	}
 	else if(!broke)
 	{
-		digitalWrite(4, LOW);
-		digitalWrite(5, LOW);
+		digitalWrite(1, LOW);
+		digitalWrite(2, LOW);
 	}
 }
 
@@ -134,12 +160,23 @@ void update(){ // updates the motors and hopefully the digital ports soon
 int previous;
 
 void controller(){ // controller function for making it easier for recordable auton
-	int LeftJoyStick = joystickGetAnalog(1, 2), RightJoyStick = joystickGetAnalog(1, 3);
+	int LeftJoyStick = joystickGetAnalog(1, 3), RightJoyStick = joystickGetAnalog(1, 2);
 	bool Lock = joystickGetDigital(1, 5, JOY_UP), Unlock = joystickGetDigital(1, 5, JOY_DOWN);
 	bool Break = joystickGetDigital(1, 6, JOY_UP), Unbreak = joystickGetDigital(1, 6, JOY_DOWN);
+	bool goawaything = joystickGetDigital(1,8,JOY_UP), fukgoback = joystickGetDigital(1,8,JOY_DOWN); 
+	int strafething = joystickGetDigital(1,7,JOY_RIGHT) - joystickGetDigital(1,7,JOY_LEFT);
+	if(strafething != 0)
+	{
+		strafe(strafething*127);
+	}
+	if(!goawaything && !strafething)
+	{
 	drive(LeftJoyStick, RightJoyStick);
+	}
 	if(Break){halt(true);} else if(Unbreak){halt(false);}
 	lockingthing(127 * (Lock - Unlock));
+	if(goawaything){goaway(127,-127);}
+	if(fukgoback){goaway(-127,127);}
 delay(20);}
 void operatorControl(){
   TaskHandle LCDMENU = taskRunLoop(lcdmenu, 12);
